@@ -75,7 +75,7 @@ app.set("json spaces", 5);
 
 app.get("/api/v1/", (req, res) => {
   res.status(200).json({
-    message: "Bye Bye YCP, Hello AP",
+    message: "Bye Bye YCP, Hello AP \n Congratulations CBN",
   });
 });
 
