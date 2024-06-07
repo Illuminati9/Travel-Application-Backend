@@ -15,8 +15,8 @@ router.get('/getBus/:id',auth,isOwner, getBus) // Working
 
 //! Essential routes for bus
 router.post('/createSeats/:busId/travel/:travelId',auth,isOwner,createSeats)
-router.get('/getSeats/:busId',auth,getSeats)
-router.put('/editSeats/:busId',auth,isOwner,editSeats)
+router.get('/getSeats/:travelId',auth,getSeats)
+// router.put('/editSeats/:busId',auth,isOwner,editSeats)
 
 //! Essential stop routes for bus
 router.post('/addStops/:busId',auth,isOwner,addStops)

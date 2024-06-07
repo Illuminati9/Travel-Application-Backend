@@ -18,10 +18,10 @@ const { Owner, Lower, Upper } = require('../utils/enumTypes')
 
 exports.createSeats = async (req, res) => {
     try {
-        const { seatCapacity, lowerSeats,upperSeats } = req.body;
+        const { seatCapacity, lowerSeats, upperSeats } = req.body;
         const { busId, travelId } = req.params || req.query;
         const { id } = req.user;
-        console.log(seatCapacity,lowerSeats,upperSeats,busId,travelId);
+        console.log(seatCapacity, lowerSeats, upperSeats, busId, travelId);
         if (!busId || !seatCapacity || !lowerSeats || !travelId) {
             return res.status(400).json({
                 success: false,
@@ -83,12 +83,12 @@ exports.createSeats = async (req, res) => {
             })
         }
 
-        for(let i=0;i<lowerSeats.length;i++){
+        for (let i = 0; i < lowerSeats.length; i++) {
             // console.log(lowerSeats[i], 'hello world lower');
-            for(let j=0;j<lowerSeats[i].length;j++){
-                const {isEmptySpace, seatNumber, seatPlace, seatType} = lowerSeats[i][j];
+            for (let j = 0; j < lowerSeats[i].length; j++) {
+                const { isEmptySpace, seatNumber, seatPlace, seatType } = lowerSeats[i][j];
                 console.log(isEmptySpace, seatNumber, seatPlace, seatType);
-                if(!isEmptySpace){
+                if (!isEmptySpace) {
                     if (!seatNumber || !seatPlace || !seatType) {
                         return res.status(400).json({
                             success: false,
@@ -99,13 +99,13 @@ exports.createSeats = async (req, res) => {
             }
         }
 
-        if(upperSeats != null){
-            for(let i=0;i<upperSeats.length;i++){
+        if (upperSeats != null) {
+            for (let i = 0; i < upperSeats.length; i++) {
                 // console.log(upperSeats[i], 'hello world lower');
-                for(let j=0;j<upperSeats[i].length;j++){
-                    const {isEmptySpace, seatNumber, seatPlace, seatType} = upperSeats[i][j];
+                for (let j = 0; j < upperSeats[i].length; j++) {
+                    const { isEmptySpace, seatNumber, seatPlace, seatType } = upperSeats[i][j];
                     console.log(isEmptySpace, seatNumber, seatPlace, seatType);
-                    if(!isEmptySpace){
+                    if (!isEmptySpace) {
                         if (!seatNumber || !seatPlace || !seatType) {
                             return res.status(400).json({
                                 success: false,
@@ -122,18 +122,18 @@ exports.createSeats = async (req, res) => {
             seatFloor: Lower,
             busId
         });
-        for (let i=0;i<lowerSeats.length;i++) {
+        for (let i = 0; i < lowerSeats.length; i++) {
             let lowerSeatsArray = [];
             const seatRowInstance = await SeatRowModel.create({
                 busId
             });
-            for (let j=0;j<lowerSeats[i].length;j++) {
+            for (let j = 0; j < lowerSeats[i].length; j++) {
                 const { isEmptySpace } = lowerSeats[i][j];
                 const seatAvailableInstance = await SeatAvailableModel.create({
                     isEmptySpace
                 });
                 if (!isEmptySpace) {
-                    const {seatNumber, seatPlace, seatType} = lowerSeats[i][j];
+                    const { seatNumber, seatPlace, seatType } = lowerSeats[i][j];
                     const seatInstance = await SeatModel.create(
                         {
                             number: seatNumber,
@@ -150,7 +150,7 @@ exports.createSeats = async (req, res) => {
                     );
                     seatAvailableInstance.seat = seatInstance._id;
                     await seatAvailableInstance.save();
-                } 
+                }
                 lowerSeatsArray.push(seatAvailableInstance._id);
             }
             seatRowInstance.seats = lowerSeatsArray;
@@ -163,24 +163,24 @@ exports.createSeats = async (req, res) => {
         travel.lowerSeats = lowerSeatFloorInstance._id;
         await travel.save();
 
-        if(upperSeats!=null){
+        if (upperSeats != null) {
             let upperSeatsRowsArray = [];
             const upperSeatFloorInstance = await SeatFloorModel.create({
                 seatFloor: Upper,
                 busId
             });
-            for (let i=0;i<upperSeats.length;i++) {
+            for (let i = 0; i < upperSeats.length; i++) {
                 let upperSeatsArray = [];
                 const seatRowInstance = await SeatRowModel.create({
                     busId
                 });
-                for (let j=0;j<upperSeats[i].length;j++) {
+                for (let j = 0; j < upperSeats[i].length; j++) {
                     const { isEmptySpace } = upperSeats[i][j];
                     const seatAvailableInstance = await SeatAvailableModel.create({
                         isEmptySpace
                     });
                     if (!isEmptySpace) {
-                        const {seatNumber, seatPlace, seatType} = upperSeats[i][j];
+                        const { seatNumber, seatPlace, seatType } = upperSeats[i][j];
                         const seatInstance = await SeatModel.create(
                             {
                                 number: seatNumber,
@@ -197,7 +197,7 @@ exports.createSeats = async (req, res) => {
                         );
                         seatAvailableInstance.seat = seatInstance._id;
                         await seatAvailableInstance.save();
-                    } 
+                    }
                     upperSeatsArray.push(seatAvailableInstance._id);
                 }
                 seatRowInstance.seats = upperSeatsArray;
@@ -329,19 +329,60 @@ exports.getSeats = async (req, res) => {
             })
         }
 
-        const travelDetails = await TravelModel.findById(travelId).exec();
+        let travelDetails = await TravelModel.findById(travelId).populate('busId').populate('source').populate('destination').exec();
         if (!travelDetails) {
             return res.status(404).json({
                 success: false,
-                message: "Bus Not Found",
+                message: "Travel Not Found",
             })
+        }
+
+        if (travelDetails.lowerSeats == null) {
+            return res.status(200).json({
+                success: true,
+                message: "No Seats Available",
+                travelDetails,
+                seats: null,
+            });
+        }
+
+        let lowerSeatsDetails = await SeatFloorModel.findById(travelDetails.lowerSeats).populate({ path: 'rows', populate: { path: 'seats' } }).exec();
+        travelDetails.lowerSeats = lowerSeatsDetails;
+
+        for(var i=0;i<lowerSeatsDetails.rows.length;i++){
+            for(var j=0;j<lowerSeatsDetails.rows[i].seats.length;j++){
+                const {isEmptySpace} = lowerSeatsDetails.rows[i].seats[j];
+                if(!isEmptySpace){
+                    let seat = await SeatModel.findById(lowerSeatsDetails.rows[i].seats[j].seat);
+                    lowerSeatsDetails.rows[i].seats[j].seat = seat;
+                }
+            }
+        }
+
+        if (travelDetails.upperSeats != null) {
+            let upperSeatsDetails = await SeatFloorModel.findById(travelDetails.upperSeats).populate({
+                path: 'rows',
+                populate: {
+                    path: 'seats'
+                }
+            }).exec();
+            travelDetails.upperSeats = upperSeatsDetails;
+
+            for(var i=0;i<upperSeatsDetails.rows.length;i++){
+                for(var j=0;j<upperSeatsDetails.rows[i].seats.length;j++){
+                    const {isEmptySpace} = upperSeatsDetails.rows[i].seats[j];
+                    if(!isEmptySpace){
+                        let seat = await SeatModel.findById(upperSeatsDetails.rows[i].seats[j].seat);
+                        upperSeatsDetails.rows[i].seats[j].seat = seat;
+                    }
+                }
+            }
         }
 
         return res.status(200).json({
             success: true,
             message: "Seats Fetched Successfully",
             travelDetails,
-            seats: travelDetails.lowerSeats,
         });
     } catch (error) {
         console.log(error)
@@ -354,113 +395,113 @@ exports.getSeats = async (req, res) => {
 }
 
 
-exports.editSeats = async (req, res) => {
-    try {
-        const { seatCapacity, seatArray } = req.body;
-        const { busId, travelId } = req.params || req.query;
-        const { id } = req.user;
-        if (!busId || !seatCapacity || !seatArray || !travelId) {
-            return res.status(400).json({
-                success: false,
-                message: "Please give required details",
-            });
-        }
+// exports.editSeats = async (req, res) => {
+//     try {
+//         const { seatCapacity, seatArray } = req.body;
+//         const { busId, travelId } = req.params || req.query;
+//         const { id } = req.user;
+//         if (!busId || !seatCapacity || !seatArray || !travelId) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Please give required details",
+//             });
+//         }
 
-        if (!mongoose.Types.ObjectId.isValid(busId)) {
-            return res.status(404).json({
-                success: false,
-                message: "Invalid Bus ID",
-            })
-        }
+//         if (!mongoose.Types.ObjectId.isValid(busId)) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Invalid Bus ID",
+//             })
+//         }
 
-        if (!mongoose.Types.ObjectId.isValid(travelId)) {
-            return res.status(404).json({
-                success: false,
-                message: "Invalid Travel ID",
-            })
-        }
+//         if (!mongoose.Types.ObjectId.isValid(travelId)) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Invalid Travel ID",
+//             })
+//         }
 
-        const user = await UserModel.findById(id);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User Not Found",
-            })
-        }
+//         const user = await UserModel.findById(id);
+//         if (!user) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "User Not Found",
+//             })
+//         }
 
-        if (user.accountType != Owner) {
-            return res.status(400).json({
-                success: false,
-                message: "You are not an owner",
-            })
-        }
+//         if (user.accountType != Owner) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "You are not an owner",
+//             })
+//         }
 
-        const bus = await BusModel.findById(busId);
-        if (!bus) {
-            return res.status(404).json({
-                success: false,
-                message: "Bus Not Found",
-            })
-        }
+//         const bus = await BusModel.findById(busId);
+//         if (!bus) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Bus Not Found",
+//             })
+//         }
 
-        if (bus.ownerId.toString() != id) {
-            return res.status(400).json({
-                success: false,
-                message: "You are not the owner of the bus",
-            })
-        }
+//         if (bus.ownerId.toString() != id) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "You are not the owner of the bus",
+//             })
+//         }
 
-        const travel = await TravelModel.findById(travelId);
-        if (!travel) {
-            return res.status(404).json({
-                success: false,
-                message: "Travel Not Found",
-            })
-        }
+//         const travel = await TravelModel.findById(travelId);
+//         if (!travel) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Travel Not Found",
+//             })
+//         }
 
-        for (var seatId in travel.seats) {
-            await SeatModel.deleteOne({ _id: seatId });
-        }
+//         for (var seatId in travel.seats) {
+//             await SeatModel.deleteOne({ _id: seatId });
+//         }
 
-        let seatsArray = [];
-        for (var seat in seatArray) {
-            const { number, seatPlace, seatType } = seat;
-            if (!number || !seatPlace || !seatType) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Please give required seat details",
-                });
-            }
-            const seatInstance = await SeatModel.create(
-                {
-                    number: number,
-                    seatPlace: seatPlace,
-                    seatType: seatType,
-                    busId,
-                    travelId
-                }
-            )
+//         let seatsArray = [];
+//         for (var seat in seatArray) {
+//             const { number, seatPlace, seatType } = seat;
+//             if (!number || !seatPlace || !seatType) {
+//                 return res.status(400).json({
+//                     success: false,
+//                     message: "Please give required seat details",
+//                 });
+//             }
+//             const seatInstance = await SeatModel.create(
+//                 {
+//                     number: number,
+//                     seatPlace: seatPlace,
+//                     seatType: seatType,
+//                     busId,
+//                     travelId
+//                 }
+//             )
 
-            seatsArray.push(seatInstance);
-        }
+//             seatsArray.push(seatInstance);
+//         }
 
-        travel.seats = seatsArray;
-        travel.seatCapacity = seatCapacity;
-        await travel.save();
-        bus.seatCapacity = seatCapacity;
-        await bus.save();
+//         travel.seats = seatsArray;
+//         travel.seatCapacity = seatCapacity;
+//         await travel.save();
+//         bus.seatCapacity = seatCapacity;
+//         await bus.save();
 
-        return res.status(200).json({
-            success: true,
-            message: "Seats Edited Successfully",
-            seats: seatsArray,
-        });
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({
-            success: false,
-            message: "An Error Occurred While Editing Seats",
-            error: error.message,
-        })
-    }
-}
+//         return res.status(200).json({
+//             success: true,
+//             message: "Seats Edited Successfully",
+//             seats: seatsArray,
+//         });
+//     } catch (error) {
+//         console.log(error)
+//         return res.status(500).json({
+//             success: false,
+//             message: "An Error Occurred While Editing Seats",
+//             error: error.message,
+//         })
+//     }
+// }
