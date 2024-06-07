@@ -8,8 +8,6 @@ const swaggerUI = require("swagger-ui-express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
-const cloudinary = require('./config/cloudinary')
-
 const userRoutes = require("./routes/auth");
 const profileRoutes = require("./routes/profile");
 const adminRoutes = require("./routes/admin");

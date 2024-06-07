@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const fs = require('fs')
 
 const BusModel = require('../models/bus')
 const BusDetailsModel = require('../models/busDetails')
@@ -7,18 +6,23 @@ const OwnerModel = require('../models/ownerDetails')
 const StaffModel = require('../models/staff')
 const UserModel = require('../models/user')
 const AddressModel = require('../models/address')
-const SeatModel = require('../models/seat')
 const StopModel = require('../models/stop')
 const TravelModel = require('../models/travel')
+const SeatFloorModel = require('../models/seatFloor')
+const SeatRowModel = require('../models/seatRow')
+const SeatAvailableModel = require('../models/seatAvailable')
+const SeatModel = require('../models/seat')
+const { Owner, Lower, Upper } = require('../utils/enumTypes')
 
 //! Seats Controllers for Bus
 
 exports.createSeats = async (req, res) => {
     try {
-        const { seatCapacity, seatArray } = req.body;
+        const { seatCapacity, lowerSeats,upperSeats } = req.body;
         const { busId, travelId } = req.params || req.query;
         const { id } = req.user;
-        if (!busId || !seatCapacity || !seatArray || !travelId) {
+        console.log(seatCapacity,lowerSeats,upperSeats,busId,travelId);
+        if (!busId || !seatCapacity || !lowerSeats || !travelId) {
             return res.status(400).json({
                 success: false,
                 message: "Please give required details",
@@ -79,38 +83,224 @@ exports.createSeats = async (req, res) => {
             })
         }
 
-        let seatsArray = [];
-        for (var seat in seatArray) {
-            const { number, seatPlace, seatType } = seat;
-            if (!number || !seatPlace || !seatType) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Please give required seat details",
-                });
-            }
-            const seatInstance = await SeatModel.create(
-                {   
-                    number: number,
-                    seatPlace: seatPlace,
-                    seatType: seatType,
-                    busId,
-                    travelId,
-                    travelDate: travel.departure
+        for(let i=0;i<lowerSeats.length;i++){
+            // console.log(lowerSeats[i], 'hello world lower');
+            for(let j=0;j<lowerSeats[i].length;j++){
+                const {isEmptySpace, seatNumber, seatPlace, seatType} = lowerSeats[i][j];
+                console.log(isEmptySpace, seatNumber, seatPlace, seatType);
+                if(!isEmptySpace){
+                    if (!seatNumber || !seatPlace || !seatType) {
+                        return res.status(400).json({
+                            success: false,
+                            message: "Please give required seat details",
+                        });
+                    }
                 }
-            )
-
-            seatsArray.push(seatInstance);
+            }
         }
-        travel.seats = seatsArray;
-        travel.seatCapacity = seatCapacity;
+
+        if(upperSeats != null){
+            for(let i=0;i<upperSeats.length;i++){
+                // console.log(upperSeats[i], 'hello world lower');
+                for(let j=0;j<upperSeats[i].length;j++){
+                    const {isEmptySpace, seatNumber, seatPlace, seatType} = upperSeats[i][j];
+                    console.log(isEmptySpace, seatNumber, seatPlace, seatType);
+                    if(!isEmptySpace){
+                        if (!seatNumber || !seatPlace || !seatType) {
+                            return res.status(400).json({
+                                success: false,
+                                message: "Please give required seat details",
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        let lowerSeatsRowsArray = [];
+        const lowerSeatFloorInstance = await SeatFloorModel.create({
+            seatFloor: Lower,
+            busId
+        });
+        for (let i=0;i<lowerSeats.length;i++) {
+            let lowerSeatsArray = [];
+            const seatRowInstance = await SeatRowModel.create({
+                busId
+            });
+            for (let j=0;j<lowerSeats[i].length;j++) {
+                const { isEmptySpace } = lowerSeats[i][j];
+                const seatAvailableInstance = await SeatAvailableModel.create({
+                    isEmptySpace
+                });
+                if (!isEmptySpace) {
+                    const {seatNumber, seatPlace, seatType} = lowerSeats[i][j];
+                    const seatInstance = await SeatModel.create(
+                        {
+                            number: seatNumber,
+                            seatPlace: seatPlace,
+                            seatType: seatType,
+                            seatFloor: Lower,
+                            seatAvailableId: seatAvailableInstance._id,
+                            seatRowId: seatRowInstance._id,
+                            seatFloorId: lowerSeatFloorInstance._id,
+                            busId,
+                            travelId,
+                            travelDate: Date.parse(travel.departure)
+                        }
+                    );
+                    seatAvailableInstance.seat = seatInstance._id;
+                    await seatAvailableInstance.save();
+                } 
+                lowerSeatsArray.push(seatAvailableInstance._id);
+            }
+            seatRowInstance.seats = lowerSeatsArray;
+            await seatRowInstance.save();
+            lowerSeatsRowsArray.push(seatRowInstance._id);
+        }
+        lowerSeatFloorInstance.rows = lowerSeatsRowsArray;
+        await lowerSeatFloorInstance.save();
+
+        travel.lowerSeats = lowerSeatFloorInstance._id;
         await travel.save();
-        bus.seatCapacity = seatCapacity;
-        await bus.save();
+
+        if(upperSeats!=null){
+            let upperSeatsRowsArray = [];
+            const upperSeatFloorInstance = await SeatFloorModel.create({
+                seatFloor: Upper,
+                busId
+            });
+            for (let i=0;i<upperSeats.length;i++) {
+                let upperSeatsArray = [];
+                const seatRowInstance = await SeatRowModel.create({
+                    busId
+                });
+                for (let j=0;j<upperSeats[i].length;j++) {
+                    const { isEmptySpace } = upperSeats[i][j];
+                    const seatAvailableInstance = await SeatAvailableModel.create({
+                        isEmptySpace
+                    });
+                    if (!isEmptySpace) {
+                        const {seatNumber, seatPlace, seatType} = upperSeats[i][j];
+                        const seatInstance = await SeatModel.create(
+                            {
+                                number: seatNumber,
+                                seatPlace: seatPlace,
+                                seatType: seatType,
+                                seatFloor: Upper,
+                                seatAvailableId: seatAvailableInstance._id,
+                                seatRowId: seatRowInstance._id,
+                                seatFloorId: upperSeatFloorInstance._id,
+                                busId,
+                                travelId,
+                                travelDate: Date.parse(travel.departure)
+                            }
+                        );
+                        seatAvailableInstance.seat = seatInstance._id;
+                        await seatAvailableInstance.save();
+                    } 
+                    upperSeatsArray.push(seatAvailableInstance._id);
+                }
+                seatRowInstance.seats = upperSeatsArray;
+                await seatRowInstance.save();
+                upperSeatsRowsArray.push(seatRowInstance._id);
+            }
+            upperSeatFloorInstance.rows = upperSeatsRowsArray;
+            await upperSeatFloorInstance.save();
+            travel.upperSeats = upperSeatFloorInstance._id;
+            await travel.save();
+        }
+
+        // const {lowerSeats, upperSeats} = seatArray;
+        // for(var seat in lowerSeats){
+        //     const { number, seatPlace, seatType, seatFloor,isSeatAvailable } = seat;
+        //     if(isSeatAvailable){
+        //         if (!number || !seatPlace || !seatType) {
+        //             return res.status(400).json({
+        //                 success: false,
+        //                 message: "Please give required seat details",
+        //             });
+        //         }
+        //     }
+        // }
+
+        // if(upperSeats !=null){
+        //     for(var seat in upperSeats){
+        //         const { number, seatPlace, seatType, seatFloor,isSeatAvailable } = seat;
+        //         if(isSeatAvailable){
+        //             if (!number || !seatPlace || !seatType) {
+        //                 return res.status(400).json({
+        //                     success: false,
+        //                     message: "Please give required seat details",
+        //                 });
+        //             }
+        //         }
+        //     }
+        // }
+
+        // let lowerSeatsArray = [];
+        // for (var seat in lowerSeats) {
+        //     const { isSeatAvailable, number, seatPlace, seatType,seatFloor } = seat;
+        //     let seatInstance = {isSeatAvailable: false, seat: null};
+        //     if(isSeatAvailable){
+        //         if(!seatFloor){
+        //             seatFloor = Lower;
+        //         }
+        //         seatInstance.seat = await SeatModel.create(
+        //             {   
+        //                 number: number,
+        //                 seatPlace: seatPlace,
+        //                 seatType: seatType,
+        //                 seatFloor: seatFloor,
+        //                 busId,
+        //                 travelId,
+        //                 travelDate: Date.parse(travel.departure)
+        //             }
+        //         );
+        //     }else{
+        //         seatInstance = {isSeatAvailable: false, seat: null};
+        //     }
+        //     lowerSeatsArray.push(seatInstance);
+        // }
+
+        // let upperSeatsArray = [];
+        // if(upperSeats != null){
+        //     for (var seat in upperSeats) {
+        //         const { isSeatAvailable, number, seatPlace, seatType,seatFloor } = seat;
+        //         let seatInstance = {isSeatAvailable: false, seat: null};
+        //         if(isSeatAvailable){
+        //             if(!seatFloor){
+        //                 seatFloor = Upper;
+        //             }
+        //             seatInstance.isSeatAvailable = true;
+        //             seatInstance.seat = await SeatModel.create(
+        //                 {   
+        //                     number: number,
+        //                     seatPlace: seatPlace,
+        //                     seatType: seatType,
+        //                     seatFloor: seatFloor,
+        //                     busId,
+        //                     travelId,
+        //                     travelDate: Date.parse(travel.departure)
+        //                 }
+        //             );
+        //         }else{
+        //             seatInstance = {isSeatAvailable: false, seat: null};
+        //         }
+        //         upperSeatsArray.push(seatInstance);
+        //     }
+        //     lowerSeatsArray = lowerSeatsArray.concat(upperSeatsArray);
+        // }
+
+        // let seatsArray = {lowerSeatsArray, upperSeatsArray};
+        // travel.seats = seatsArray;
+        // travel.seatCapacity = seatCapacity;
+        // await travel.save();
+        // bus.seatCapacity = seatCapacity;
+        // await bus.save();
 
         return res.status(201).json({
             success: true,
             message: "Seats Created Successfully",
-            seats: seatsArray,
         });
     } catch (error) {
         console.log(error)
@@ -139,7 +329,7 @@ exports.getSeats = async (req, res) => {
             })
         }
 
-        const travelDetails = await TravelModel.findById(travelId).populate('seats').exec();
+        const travelDetails = await TravelModel.findById(travelId).exec();
         if (!travelDetails) {
             return res.status(404).json({
                 success: false,
@@ -151,7 +341,7 @@ exports.getSeats = async (req, res) => {
             success: true,
             message: "Seats Fetched Successfully",
             travelDetails,
-            seats: travelDetails.seats,
+            seats: travelDetails.lowerSeats,
         });
     } catch (error) {
         console.log(error)

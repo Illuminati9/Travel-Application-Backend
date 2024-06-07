@@ -11,14 +11,50 @@ const Gas = 'GAS';
 
 const Male = 'MALE';
 const Female = 'FEMALE';
-const Others  = 'OTHERS';
+const Others = 'OTHERS';
 
 const Booked = 'BOOKED';
 const Blocked = 'BLOCKED';
-const Available = 'AVAILABLE';  
+const Available = 'AVAILABLE';
 const Occupied = 'OCCUPIED';
 const Unavailable = 'UNAVAILABLE';
 const Pending = 'PENDING';
 const Cancelled = 'CANCELLED';
 
-module.exports={Admin, User, Owner,Petrol, Diesel, Gas, Staff, Male, Female, Others, Unavailable, Pending,Cancelled,Booked, Blocked, Available,Occupied,}
+const Lower = 'LOWER';
+const Upper = 'UPPER';
+
+const Seater = 'SEATER';
+const Sleeper = 'SLEEPER';
+
+const Window = 'WINDOW';
+const Aisle = 'AISLE';
+
+const EmptySpace = 'EMPTY_SPACE';
+
+module.exports = {
+    Admin,
+    User,
+    Owner,
+    Petrol,
+    Diesel, 
+    Gas, 
+    Staff, 
+    Male, 
+    Female, 
+    Others, 
+    Unavailable, 
+    Pending, 
+    Cancelled, 
+    Booked, 
+    Blocked, 
+    Available, 
+    Occupied, 
+    Lower, 
+    Upper,
+    Seater,
+    Sleeper,
+    Window,
+    Aisle,
+    EmptySpace
+}

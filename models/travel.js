@@ -25,12 +25,16 @@ const travelSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
-    seats: [
+    lowerSeats: 
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Seat'
-        }
-    ],
+            ref: 'SeatFloor'
+        },
+    upperSeats: 
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'SeatFloor'
+        },
     arrival: {
         type: Date,
         required: true
