@@ -83,6 +83,13 @@ exports.createSeats = async (req, res) => {
             })
         }
 
+        if(travel.lowerSeats!=null || travel.upperSeats!=null){
+            return res.status(400).json({
+                success: false,
+                message: "Seats Already Created",
+            })
+        }
+
         for (let i = 0; i < lowerSeats.length; i++) {
             // console.log(lowerSeats[i], 'hello world lower');
             for (let j = 0; j < lowerSeats[i].length; j++) {
@@ -395,113 +402,346 @@ exports.getSeats = async (req, res) => {
 }
 
 
-// exports.editSeats = async (req, res) => {
-//     try {
-//         const { seatCapacity, seatArray } = req.body;
-//         const { busId, travelId } = req.params || req.query;
-//         const { id } = req.user;
-//         if (!busId || !seatCapacity || !seatArray || !travelId) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Please give required details",
-//             });
-//         }
+exports.editSeats = async (req, res) => {
+    try {
+        const { seatCapacity, lowerSeats, upperSeats } = req.body;
+        const {  travelId } = req.params || req.query;
+        const { id } = req.user;
+        console.log("hell world")
+        if ( !seatCapacity || !lowerSeats || !travelId) {
+            return res.status(400).json({
+                success: false,
+                message: "Please give required details",
+            });
+        }
 
-//         if (!mongoose.Types.ObjectId.isValid(busId)) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Invalid Bus ID",
-//             })
-//         }
+        if (!mongoose.Types.ObjectId.isValid(travelId)) {
+            return res.status(404).json({
+                success: false,
+                message: "Invalid Travel ID",
+            })
+        }
 
-//         if (!mongoose.Types.ObjectId.isValid(travelId)) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Invalid Travel ID",
-//             })
-//         }
+        const user = await UserModel.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User Not Found",
+            })
+        }
 
-//         const user = await UserModel.findById(id);
-//         if (!user) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "User Not Found",
-//             })
-//         }
+        if (user.accountType != Owner) {
+            return res.status(400).json({
+                success: false,
+                message: "You are not an owner",
+            })
+        }
 
-//         if (user.accountType != Owner) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "You are not an owner",
-//             })
-//         }
+        const travel = await TravelModel.findById(travelId).populate({
+            path: 'lowerSeats',
+            populate: {
+                path: 'rows',
+                populate: {
+                    path: 'seats'
+                }
+            }
+        }).populate({
+            path: 'upperSeats',
+            populate: {
+                path: 'rows',
+                populate: {
+                    path: 'seats'
+                }
+            }
+        }).exec();
+        const bus = await BusModel.findById(travel.busId);
 
-//         const bus = await BusModel.findById(busId);
-//         if (!bus) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Bus Not Found",
-//             })
-//         }
+        if(bus.ownerId.toString() != id){
+            return res.status(400).json({
+                success: false,
+                message: "You are not the owner of the bus",
+            })
+        }
 
-//         if (bus.ownerId.toString() != id) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "You are not the owner of the bus",
-//             })
-//         }
+        if (!travel) {
+            return res.status(404).json({
+                success: false,
+                message: "Travel Not Found",
+            })
+        }
 
-//         const travel = await TravelModel.findById(travelId);
-//         if (!travel) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Travel Not Found",
-//             })
-//         }
+        if (travel.lowerSeats == null) {
+            return res.status(200).json({
+                success: true,
+                message: "No Seats Available",
+                travel,
+                seats: null,
+            });
+        }
+       
+        for(var i=0;i<travel.lowerSeats.rows.length;i++){
+            for(var j=0;j<travel.lowerSeats.rows[i].seats.length;j++){
+                const {isEmptySpace} = travel.lowerSeats.rows[i].seats[j];
+                if(!isEmptySpace){
+                    await SeatModel.deleteOne({_id: travel.lowerSeats.rows[i].seats[j].seat});
+                    lowerSeats[i][j].seat = null;
+                }
+                await SeatAvailableModel.deleteOne({_id: travel.lowerSeats.rows[i].seats[j]._id});
+            }
+            await SeatRowModel.deleteOne({_id: travel.lowerSeats.rows[i]._id});
+        }
+        await SeatFloorModel.deleteOne({_id: travel.lowerSeats._id});
 
-//         for (var seatId in travel.seats) {
-//             await SeatModel.deleteOne({ _id: seatId });
-//         }
 
-//         let seatsArray = [];
-//         for (var seat in seatArray) {
-//             const { number, seatPlace, seatType } = seat;
-//             if (!number || !seatPlace || !seatType) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     message: "Please give required seat details",
-//                 });
-//             }
-//             const seatInstance = await SeatModel.create(
-//                 {
-//                     number: number,
-//                     seatPlace: seatPlace,
-//                     seatType: seatType,
-//                     busId,
-//                     travelId
-//                 }
-//             )
+        if(upperSeats != null){
+            for(var i=0;i<travel.upperSeats.rows.length;i++){
+                for(var j=0;j<travel.upperSeats.rows[i].seats.length;j++){
+                    const {isEmptySpace} = travel.upperSeats.rows[i].seats[j];
+                    if(!isEmptySpace){
+                        await SeatModel.deleteOne({_id: travel.upperSeats.rows[i].seats[j].seat});
+                        upperSeats[i][j].seat = null;
+                    }
+                    await SeatAvailableModel.deleteOne({_id: travel.upperSeats.rows[i].seats[j]._id});
+                }
+                await SeatRowModel.deleteOne({_id: travel.upperSeats.rows[i]._id});
+            }
+            await SeatFloorModel.deleteOne({_id: travel.upperSeats._id});
+        }
 
-//             seatsArray.push(seatInstance);
-//         }
+        console.log('Hello world');
 
-//         travel.seats = seatsArray;
-//         travel.seatCapacity = seatCapacity;
-//         await travel.save();
-//         bus.seatCapacity = seatCapacity;
-//         await bus.save();
+        let lowerSeatsRowsArray = [];
+        const lowerSeatFloorInstance = await SeatFloorModel.create({
+            seatFloor: Lower,
+            busId: travel.busId
+        });
+        for (let i = 0; i < lowerSeats.length; i++) {
+            let lowerSeatsArray = [];
+            const seatRowInstance = await SeatRowModel.create({
+                busId: travel.busId
+            });
+            for (let j = 0; j < lowerSeats[i].length; j++) {
+                const { isEmptySpace } = lowerSeats[i][j];
+                const seatAvailableInstance = await SeatAvailableModel.create({
+                    isEmptySpace
+                });
+                if (!isEmptySpace) {
+                    const { seatNumber, seatPlace, seatType } = lowerSeats[i][j];
+                    const seatInstance = await SeatModel.create(
+                        {
+                            number: seatNumber,
+                            seatPlace: seatPlace,
+                            seatType: seatType,
+                            seatFloor: Lower,
+                            seatAvailableId: seatAvailableInstance._id,
+                            seatRowId: seatRowInstance._id,
+                            seatFloorId: lowerSeatFloorInstance._id,
+                            busId: travel.busId,
+                            travelId,
+                            travelDate: Date.parse(travel.departure)
+                        }
+                    );
+                    seatAvailableInstance.seat = seatInstance._id;
+                    await seatAvailableInstance.save();
+                }
+                lowerSeatsArray.push(seatAvailableInstance._id);
+            }
+            seatRowInstance.seats = lowerSeatsArray;
+            await seatRowInstance.save();
+            lowerSeatsRowsArray.push(seatRowInstance._id);
+        }
 
-//         return res.status(200).json({
-//             success: true,
-//             message: "Seats Edited Successfully",
-//             seats: seatsArray,
-//         });
-//     } catch (error) {
-//         console.log(error)
-//         return res.status(500).json({
-//             success: false,
-//             message: "An Error Occurred While Editing Seats",
-//             error: error.message,
-//         })
-//     }
-// }
+        lowerSeatFloorInstance.rows = lowerSeatsRowsArray;
+        await lowerSeatFloorInstance.save();
+
+        travel.lowerSeats = lowerSeatFloorInstance._id;
+        await travel.save();
+
+        if (upperSeats != null) {
+            let upperSeatsRowsArray = [];
+            const upperSeatFloorInstance = await SeatFloorModel.create({
+                seatFloor: Upper,
+                busId: travel.busId
+            });
+            for (let i = 0; i < upperSeats.length; i++) {
+                let upperSeatsArray = [];
+                const seatRowInstance = await SeatRowModel.create({
+                    busId: travel.busId
+                });
+                for (let j = 0; j < upperSeats[i].length; j++) {
+                    const { isEmptySpace } = upperSeats[i][j];
+                    const seatAvailableInstance = await SeatAvailableModel.create({
+                        isEmptySpace
+                    });
+                    if (!isEmptySpace) {
+                        const { seatNumber, seatPlace, seatType } = upperSeats[i][j];
+                        const seatInstance = await SeatModel.create(
+                            {
+                                number: seatNumber,
+                                seatPlace: seatPlace,
+                                seatType: seatType,
+                                seatFloor: Upper,
+                                seatAvailableId: seatAvailableInstance._id,
+                                seatRowId: seatRowInstance._id,
+                                seatFloorId: upperSeatFloorInstance._id,
+                                busId: travel.busId,
+                                travelId,
+                                travelDate: Date.parse(travel.departure)
+                            }
+                        );
+                        seatAvailableInstance.seat = seatInstance._id;
+                        await seatAvailableInstance.save();
+                    }
+                    upperSeatsArray.push(seatAvailableInstance._id);
+                }
+                seatRowInstance.seats = upperSeatsArray;
+                await seatRowInstance.save();
+                upperSeatsRowsArray.push(seatRowInstance._id);
+            }
+            upperSeatFloorInstance.rows = upperSeatsRowsArray;
+            await upperSeatFloorInstance.save();
+            travel.upperSeats = upperSeatFloorInstance._id;
+            await travel.save();
+        }
+
+
+        return res.status(200).json({
+            success: true,
+            message: "Seats Edited Successfully",
+            seats: travel,
+        });
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            message: "An Error Occurred While Editing Seats",
+            error: error.message,
+        })
+    }
+}
+
+
+exports.deleteSeats = async(req,res)=>{
+    try {
+        const { seatCapacity, lowerSeats, upperSeats } = req.body;
+        const {  travelId } = req.params || req.query;
+        const { id } = req.user;
+        
+        if ( !seatCapacity || !lowerSeats || !travelId) {
+            return res.status(400).json({
+                success: false,
+                message: "Please give required details",
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(travelId)) {
+            return res.status(404).json({
+                success: false,
+                message: "Invalid Travel ID",
+            })
+        }
+
+        const user = await UserModel.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User Not Found",
+            })
+        }
+
+        if (user.accountType != Owner) {
+            return res.status(400).json({
+                success: false,
+                message: "You are not an owner",
+            })
+        }
+
+        const travel = await TravelModel.findById(travelId).populate({
+            path: 'lowerSeats',
+            populate: {
+                path: 'rows',
+                populate: {
+                    path: 'seats'
+                }
+            }
+        }).populate({
+            path: 'upperSeats',
+            populate: {
+                path: 'rows',
+                populate: {
+                    path: 'seats'
+                }
+            }
+        }).exec();
+        const bus = await BusModel.findById(travel.busId);
+
+        if(bus.ownerId.toString() != id){
+            return res.status(400).json({
+                success: false,
+                message: "You are not the owner of the bus",
+            })
+        }
+
+        if (!travel) {
+            return res.status(404).json({
+                success: false,
+                message: "Travel Not Found",
+            })
+        }
+
+        if (travel.lowerSeats == null) {
+            return res.status(200).json({
+                success: true,
+                message: "No Seats Available",
+                travel,
+                seats: null,
+            });
+        }
+       
+        for(var i=0;i<travel.lowerSeats.rows.length;i++){
+            for(var j=0;j<travel.lowerSeats.rows[i].seats.length;j++){
+                const {isEmptySpace} = travel.lowerSeats.rows[i].seats[j];
+                if(!isEmptySpace){
+                    await SeatModel.deleteOne({_id: travel.lowerSeats.rows[i].seats[j].seat});
+                    lowerSeats[i][j].seat = null;
+                }
+                await SeatAvailableModel.deleteOne({_id: travel.lowerSeats.rows[i].seats[j]._id});
+            }
+            await SeatRowModel.deleteOne({_id: travel.lowerSeats.rows[i]._id});
+        }
+        await SeatFloorModel.deleteOne({_id: travel.lowerSeats._id});
+
+
+        if(upperSeats != null){
+            for(var i=0;i<travel.upperSeats.rows.length;i++){
+                for(var j=0;j<travel.upperSeats.rows[i].seats.length;j++){
+                    const {isEmptySpace} = travel.upperSeats.rows[i].seats[j];
+                    if(!isEmptySpace){
+                        await SeatModel.deleteOne({_id: travel.upperSeats.rows[i].seats[j].seat});
+                        upperSeats[i][j].seat = null;
+                    }
+                    await SeatAvailableModel.deleteOne({_id: travel.upperSeats.rows[i].seats[j]._id});
+                }
+                await SeatRowModel.deleteOne({_id: travel.upperSeats.rows[i]._id});
+            }
+            await SeatFloorModel.deleteOne({_id: travel.upperSeats._id});
+        }
+
+        travel.lowerSeats = null;
+        travel.upperSeats = null;
+        await travel.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Seats Deleted Successfully",
+            seats: travel,
+        });
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            message: "An Error Occurred While Deleting Seats",
+            error: error.message,
+        })
+    }
+}

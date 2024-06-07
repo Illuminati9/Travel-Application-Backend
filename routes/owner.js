@@ -4,7 +4,7 @@ const router = express.Router()
 const {createOwner} = require('../controllers/owner')
 const {auth,isUser,isStaff,isOwner} = require('../middlewares/middleware')
 const { createBus, getBuses, getBus, addStops, getStops, editStops } = require('../controllers/bus')
-const {createSeats, getSeats, editSeats} = require('../controllers/seat')
+const {createSeats, getSeats, editSeats, deleteSeats} = require('../controllers/seat')
 
 router.post('/registerOwner',auth,createOwner)  // Working
 
@@ -16,7 +16,8 @@ router.get('/getBus/:id',auth,isOwner, getBus) // Working
 //! Essential routes for bus
 router.post('/createSeats/:busId/travel/:travelId',auth,isOwner,createSeats)
 router.get('/getSeats/:travelId',auth,getSeats)
-// router.put('/editSeats/:busId',auth,isOwner,editSeats)
+router.put('/editSeats/:travelId',auth,isOwner,editSeats)
+router.delete('/deleteSeats/:travelId',auth,isOwner,deleteSeats);
 
 //! Essential stop routes for bus
 router.post('/addStops/:busId',auth,isOwner,addStops)
