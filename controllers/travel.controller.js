@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
-const travelModel = require('../models/travel');
-const busModel = require('../models/bus');
-const stopModel = require('../models/stop');
+const travelModel = require('../models/travel.model');
+const busModel = require('../models/bus.model');
+const stopModel = require('../models/stop.model');
 
 
 exports.getTravelBuses = async (req, res) => {

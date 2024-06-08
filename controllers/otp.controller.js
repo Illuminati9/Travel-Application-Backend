@@ -1,5 +1,5 @@
-const OTP = require("../models/otp");
-const OTPPhone = require("../models/otpPhone");
+const OTP = require("../models/otp.model");
+const OTPPhone = require("../models/otpPhone.model");
 
 
 exports.verifyOTPEmail = async(req,res)=>{

@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
-const UserModel = require("../models/user");
-const ProfileModel = require("../models/profile");
-const TicketModel = require("../models/ticket");
-const BookingModel = require("../models/booking");
-const BusModel = require("../models/bus");
+const UserModel = require("../models/user.model");
+const ProfileModel = require("../models/profile.model");
+const TicketModel = require("../models/ticket.model");
+const BookingModel = require("../models/booking.model");
+const BusModel = require("../models/bus.model");
 
 const { Admin, User, Staff, Owner } = require("../utils/enumTypes");
 
@@ -453,56 +453,6 @@ exports.getBusById = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "An Error Occurred While Fetching Bus",
-      error: error.message,
-    });
-  }
-};
-
-exports.getSourceStops = async (req, res) => {
-  try {
-    const stops = await BusModel.find({}, { sourceStop: 1 });
-    if (!stops) {
-      return res.status(400).json({
-        success: true,
-        message: "No Stops Found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Stops Fetched Successfully",
-      stops,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      message: "An Error Occurred While Fetching Stops",
-      error: error.message,
-    });
-  }
-};
-
-exports.getDestinationStops = async (req, res) => {
-  try {
-    const stops = await BusModel.find({}, { destinationStop: 1 });
-    if (!stops) {
-      return res.status(400).json({
-        success: true,
-        message: "No Stops Found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Stops Fetched Successfully",
-      stops,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      message: "An Error Occurred While Fetching Stops",
       error: error.message,
     });
   }

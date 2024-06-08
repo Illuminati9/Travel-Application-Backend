@@ -1,5 +1,5 @@
-const Profile = require("../models/profile");
-const User = require("../models/user");
+const Profile = require("../models/profile.model");
+const User = require("../models/user.model");
 const { getObjectUrl, uploadImageToS3_Type2 } = require("../config/s3Server");
 const { profileS3Url, svgType, jpegType, pngType, jpgType, svgType2, allowedFileTypes } = require("../utils/constants");
 

@@ -2,18 +2,18 @@ const express = require("express");
 const router = express.Router();
 
 const { signUpPhone, loginUsingPhoneNumber, sendOTPPhone, changePasswordPhone, forgotPasswordPhone, refreshRoute,
-  logout } = require('../controllers/authPhone')
+  logout } = require('../controllers/authPhone.controller')
 
-const { sendOTP } = require('../controllers/auth')
+const { sendOTP } = require('../controllers/auth.controller')
 
-const { verifyOTPEmail, verifyOTPPhone } = require('../controllers/otp')
+const { verifyOTPEmail, verifyOTPPhone } = require('../controllers/otp.controller')
 
 const {
   resetPasswordToken,
   resetPassword,
-} = require("../controllers/resetPassword");
+} = require("../controllers/resetPassword.controller");
 
-const { resetPasswordTokenPhone, resetPasswordPhone } = require('../controllers/resetPasswordPhone')
+const { resetPasswordTokenPhone, resetPasswordPhone } = require('../controllers/resetPasswordPhone.controller')
 
 const { auth } = require("../middlewares/middleware");
 

@@ -1,7 +1,7 @@
-const User = require('../models/user')
-const OTP = require('../models/otp')
-const StopModel = require('../models/stop')
-const AddressModel = require('../models/address')
+const User = require('../models/user.model')
+const OTP = require('../models/otp.model')
+const StopModel = require('../models/stop.model')
+const AddressModel = require('../models/address.model')
 
 exports.getStops = async (req, res) => {
     try {

@@ -1,4 +1,4 @@
-const UserModel = require('../models/user')
+const UserModel = require('../models/user.model')
 const { User } = require('../utils/enumTypes')
 const sendSMSPhone = require('../utils/smsSender')
 const bcrypt = require('bcrypt')

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { deleteAccount, updateDisplayPicture, updateProfile, getUserDetails } = require('../controllers/profile')
+const { deleteAccount, updateDisplayPicture, updateProfile, getUserDetails } = require('../controllers/profile.controller')
 
 const { auth } = require('../middlewares/middleware')
 

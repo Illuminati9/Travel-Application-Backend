@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
-const UserModel = require('../models/user')
-const AddressModel = require('../models/address')
+const UserModel = require('../models/user.model')
+const AddressModel = require('../models/address.model')
 
 exports.getAddressById = async(req,res)=>{
     try {

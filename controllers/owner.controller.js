@@ -1,9 +1,9 @@
 const fs = require('fs')
 
-const User = require('../models/user')
-const OTPPhone = require('../models/otpPhone')
-const OwnerModel = require('../models/ownerDetails')
-const Address = require('../models/address')
+const User = require('../models/user.model')
+const OTPPhone = require('../models/otpPhone.model')
+const OwnerModel = require('../models/ownerDetails.model')
+const Address = require('../models/address.model')
 
 const {ownerS3UrlProof,allowedFileTypes} = require('../utils/constants')
 const {uploadImageToS3_Type2, getObjectUrl} = require('../config/s3Server')

@@ -1,5 +1,5 @@
 const otpGenerator = require('otp-generator')
-const OTPPhone = require('../models/otpPhone')
+const OTPPhone = require('../models/otpPhone.model')
 
 exports.generateOTP = async () => {
     let otp;

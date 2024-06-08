@@ -9,7 +9,7 @@ const {
   deleteStop,
   getStopById,
   getStopByName,
-} = require("../controllers/stop");
+} = require("../controllers/stop.controller");
 const {
   getUser,
   getUsers,
@@ -23,7 +23,7 @@ const {
   getBusById,
   getSourceStops,
   getDestinationStops,
-} = require("../controllers/admin");
+} = require("../controllers/admin.controller");
 
 //! Stop Routes
 router.get("/stops", getStops); // Working
@@ -32,8 +32,8 @@ router.get("/stop/:id", auth, getStopById); //Working
 router.post("/stop", auth, isAdmin, createStop); //Working
 router.put("/stop/:id", auth, isAdmin, updateStop); //Working
 router.delete("/stop/:id", auth, isAdmin, deleteStop); //Working
-router.post("/stops/source", auth, getSourceStops); //Working
-router.post("/stops/destination", auth, getDestinationStops); // Working
+
+
 
 //! Admin Routes
 router.get("/users", auth, isAdmin, getUsers); //Working

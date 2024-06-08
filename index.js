@@ -8,12 +8,12 @@ const swaggerUI = require("swagger-ui-express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 
-const userRoutes = require("./routes/auth");
-const profileRoutes = require("./routes/profile");
-const adminRoutes = require("./routes/admin");
-const ownerRoutes = require("./routes/owner");
-const searchRoutes = require('./routes/search')
-const universalRoutes = require('./routes/universal')
+const authRoutes = require("./routes/auth.routes");
+const profileRoutes = require("./routes/profile.routes");
+const adminRoutes = require("./routes/admin.routes");
+const ownerRoutes = require("./routes/owner.routes");
+const userRoutes = require('./routes/users.routes')
+const universalRoutes = require('./routes/universal.routes')
 
 const swaggerSpec = require("./swagger");
 
@@ -77,11 +77,11 @@ app.get("/api/v1/", (req, res) => {
   });
 });
 
-app.use("/api/v1/auth", userRoutes);
+app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/owner", ownerRoutes);
-app.use('/api/v1/search',searchRoutes);
+app.use('/api/v1/user',userRoutes);
 app.use('/api/v1/universal',universalRoutes);
 
 connectToDatabase();
